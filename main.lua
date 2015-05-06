@@ -88,15 +88,15 @@ end
 
 function initializePositions()
 -- initialize the paddle postion
-  paddle.x = width/2
-  paddle.y = height*9/10
   paddle.speed = 200
   paddle.width = 40
   paddle.height = 10
+  paddle.x = width/2-paddle.width/2
+  paddle.y = height*9/10
 -- initialize the ball position and randomize direction
-  ball.x = width/2
-  ball.y = height*6/10
   ball.radius = 5
+  ball.x = width/2-ball.radius
+  ball.y = height*6/10
   speed = 150
   math.randomseed( os.time() )
   dir = math.random(360)
