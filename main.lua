@@ -9,6 +9,20 @@ ball = {}
 state = "ready"
 blop = love.audio.newSource("blop.wav", "static")
 
+blocks = {}
+for i=1,19 do
+    for j=1,5 do
+        local block = {}
+        block.width = 40
+        block.height = 20
+        block.x = (i-1) * (block.width + 2)
+        block.y = (j-1) * (block.height + 2) + 100
+        block.magenta = (5-j)*255/4
+        block.yellow = (j-1)*255/4
+        table.insert(blocks, block)
+    end
+end
+
 function love.load()
   love.window.setMode(width,height)
   love.graphics.setNewFont(12)
@@ -17,6 +31,10 @@ function love.load()
 end
 
 function love.update(dt)
+  if table.getn(blocks) == 0 then
+    state = "won"
+    text = "You won!"
+  end
   if state=="playing" then
     movePaddle(dt)
     detectCollision()
@@ -25,16 +43,26 @@ function love.update(dt)
 end
 
 function love.draw()
+-- draw the debug text
   love.graphics.setColor(255,255,255,255)
-  love.graphics.rectangle("fill", paddle.x, paddle.y, paddle.width, paddle.height)
-  love.graphics.print( text, 330, 300 )
-  love.graphics.print("ball.x: " .. ball.x, 330, 200)
-  love.graphics.print("ball.y: " .. ball.y, 330, 210)
-  love.graphics.print("paddle.x: " .. paddle.x, 330, 220)
-  love.graphics.print("paddle.y: " .. paddle.y, 330, 230)
+  love.graphics.print("ball.x: " .. ball.x, 330, 250)
+  love.graphics.print("ball.y: " .. ball.y, 330, 260)
+  love.graphics.print("paddle.x: " .. paddle.x, 330, 270)
+  love.graphics.print("paddle.y: " .. paddle.y, 330, 280)
+  love.graphics.print( text, 330, 320 )
+  love.graphics.print("blocks left:" .. table.getn(blocks), 330, 350)
+-- draw the paddle  
   love.graphics.setColor(255,255,0,255)
+  love.graphics.rectangle("fill", paddle.x, paddle.y, paddle.width, paddle.height)
+-- draw the ball
+  love.graphics.setColor(255,255,255,255)
   love.graphics.circle("fill", ball.x, ball.y, ball.radius)
-  
+-- draw the blocks
+  for i,v in ipairs(blocks) do
+    love.graphics.setColor(0,v.magenta,v.yellow,255)
+    love.graphics.rectangle("fill", v.x, v.y, v.width, v.height)
+  end
+
 end
 
 function love.keypressed(key)
@@ -84,6 +112,20 @@ function detectCollision()
     ball.dy = -1*ball.dy
     blop:play()
   end
+  -- detect collision with the blocks
+  for i,v in ipairs(blocks) do
+    if ball.dy>0 and ball.y+ball.radius>v.y and ball.y<v.y+v.height and ball.x>v.x and ball.x<v.x+v.width then
+      ball.dy = -1* ball.dy
+      table.remove(blocks,i)
+      blop:play()
+    end
+    if ball.dy<0 and ball.y-ball.radius<v.y+v.height and ball.y>v.y and ball.x>v.x and ball.x<v.x+v.width then 
+      ball.dy = -1* ball.dy 
+      blop:play() 
+      table.remove(blocks,i)
+    end
+  end
+
 end
 
 function initializePositions()
