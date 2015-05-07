@@ -1,16 +1,20 @@
-height = 500
-width = 800
+-- A one-level infinite-life Breakout port to Love2D
+-- Author: Brian Kessler
+-- Version: 1.0.0
+-- Date: 2015-05-06
+-- License: https://www.gnu.org/licenses/gpl.html 
 
-
-state = "ready"
-
-paddle = {}
-ball = {}
-state = "ready"
-blop = love.audio.newSource("blop.wav", "static")
-
-blocks = {}
-for i=1,19 do
+function love.load()
+-- setup the playing window
+  height = 500
+  width = 800
+  love.window.setMode(width,height)
+  love.graphics.setNewFont(12)
+-- create the pieces
+  paddle = {}
+  ball = {}
+  blocks = {}
+  for i=1,19 do
     for j=1,5 do
         local block = {}
         block.width = 40
@@ -21,13 +25,11 @@ for i=1,19 do
         block.yellow = (j-1)*255/4
         table.insert(blocks, block)
     end
-end
-
-function love.load()
-  love.window.setMode(width,height)
-  love.graphics.setNewFont(12)
+  end
+-- load the sound effect
+  blop = love.audio.newSource("blop.wav", "static")
+-- set the state ready to start
   initializePositions()
-  text = "Nothing pressed"
 end
 
 function love.update(dt)
@@ -43,14 +45,10 @@ function love.update(dt)
 end
 
 function love.draw()
--- draw the debug text
+-- draw the text
   love.graphics.setColor(255,255,255,255)
-  love.graphics.print("ball.x: " .. ball.x, 330, 250)
-  love.graphics.print("ball.y: " .. ball.y, 330, 260)
-  love.graphics.print("paddle.x: " .. paddle.x, 330, 270)
-  love.graphics.print("paddle.y: " .. paddle.y, 330, 280)
-  love.graphics.print( text, 330, 320 )
-  love.graphics.print("blocks left:" .. table.getn(blocks), 330, 350)
+  love.graphics.print( text, 230, 320 )
+  love.graphics.print("blocks left:" .. table.getn(blocks), width*8/9, 10)
 -- draw the paddle  
   love.graphics.setColor(255,255,0,255)
   love.graphics.rectangle("fill", paddle.x, paddle.y, paddle.width, paddle.height)
@@ -62,30 +60,24 @@ function love.draw()
     love.graphics.setColor(0,v.magenta,v.yellow,255)
     love.graphics.rectangle("fill", v.x, v.y, v.width, v.height)
   end
-
 end
 
 function love.keypressed(key)
    if state == "ready" then
       state = "playing"
-      
+      text = ""
    end
 end
 
 function movePaddle(dt)
   if love.keyboard.isDown( "right" ) then
-    text = "The RIGHT Arrow key is held down!"
     if paddle.x+paddle.width<width then
       paddle.x = paddle.x + paddle.speed*dt
     end
   elseif love.keyboard.isDown( "left" ) then
-    text = "The LEFT Arrow key is held down!"
     if paddle.x>0 then
       paddle.x = paddle.x - paddle.speed*dt
     end
-  else
-    text = "Nothing pressed"
-  end
 end
 
 function moveBall(dt)
@@ -104,7 +96,7 @@ function detectCollision()
     blop:play()
   end
   if ball.y-ball.radius>height then
-    state = "ready"
+  -- ball fell off the bottom of the screen reinitialize (infinite lives)
     initializePositions()
   end
   -- detect collision with the paddle
@@ -125,10 +117,13 @@ function detectCollision()
       table.remove(blocks,i)
     end
   end
-
 end
 
 function initializePositions()
+-- reset to ready
+  state="ready"
+-- set text to display instructions
+  text = "Use arrow keys to move. Press any key to start."
 -- initialize the paddle postion
   paddle.speed = 200
   paddle.width = 40
