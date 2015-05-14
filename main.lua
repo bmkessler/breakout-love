@@ -63,7 +63,9 @@ function love.draw()
 end
 
 function love.keypressed(key)
-   if state == "ready" then
+   if key == 'escape' then
+      love.event.push('quit')
+   elseif state == "ready" then
       state = "playing"
       text = ""
    end
@@ -78,6 +80,7 @@ function movePaddle(dt)
     if paddle.x>0 then
       paddle.x = paddle.x - paddle.speed*dt
     end
+  end
 end
 
 function moveBall(dt)
