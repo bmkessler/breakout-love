@@ -11,7 +11,7 @@ function love.load()
   love.window.setMode(width,height)
   love.graphics.setNewFont(12)
   world = love.physics.newWorld(0, 0, true)
-  world:setCallbacks(beginContact)
+  world:setCallbacks(beginContact, endContact)
 -- top wall zero friction for perfectly inelastic collisions
   topwall = {}
   topwall.body = love.physics.newBody(world, width/2, 0, "static")
@@ -32,6 +32,7 @@ function love.load()
   rightwall.fixture:setFriction(0.0)
  
 -- create the pieces
+-- the ball
   ball = {}
   ball.radius = 5
   ball.x = width/2-ball.radius
@@ -52,7 +53,27 @@ function love.load()
   paddle.shape = love.physics.newRectangleShape(paddle.width, paddle.height)
   paddle.fixture = love.physics.newFixture(paddle.body, paddle.shape)
   paddle.fixture:setFriction(0.0)
+-- the blocks
+  blocks = {}
+  for i=1,19 do
+    for j=1,5 do
+        local block = {}
+        block.width = 40
+        block.height = 20
+        block.x = (i-1) * (block.width + 2) + block.width/2
+        block.y = (j-1) * (block.height + 2) + 100
+        block.magenta = (5-j)*255/4
+        block.yellow = (j-1)*255/4
+        block.body = love.physics.newBody(world, block.x, block.y, "static")
+        block.shape = love.physics.newRectangleShape(block.width, block.height)
+        block.fixture = love.physics.newFixture(block.body, block.shape)
+        block.fixture:setFriction(0.0)
+        block.fixture:setUserData("Block") 
+        table.insert(blocks, block)
+    end
+  end
 
+-- set the ball and paddle in their starting positions
   initializePositions()
 
 -- load the sound effect
@@ -60,9 +81,14 @@ function love.load()
 end
 
 function love.update(dt)
+  if table.getn(blocks) == 0 then
+    state = "won"
+    text = "You won!"
+  end
   if state=="playing" then
     world:update(dt)
     movePaddle(dt)
+    removeHitBlocks()
     detectLoss()
   end
 end
@@ -71,6 +97,7 @@ function love.draw()
 -- draw the text
   love.graphics.setColor(255,255,255,255)
   love.graphics.print( text, 230, 320 )
+  love.graphics.print("blocks left:" .. table.getn(blocks), width*8/9, 10)
 -- draw the paddle  
   love.graphics.setColor(255,255,0,255)
 --  love.graphics.rectangle("fill", paddle.body:getX(), paddle.body:getY(), paddle.width, paddle.height)
@@ -78,6 +105,11 @@ function love.draw()
 -- draw the ball
   love.graphics.setColor(255,255,255,255)
   love.graphics.circle("fill", ball.body:getX(), ball.body:getY(), ball.shape:getRadius())
+-- draw the blocks
+  for i,v in ipairs(blocks) do
+    love.graphics.setColor(0,v.magenta,v.yellow,255)
+    love.graphics.polygon("fill", v.body:getWorldPoints(v.shape:getPoints()))
+  end
 end
 
 function love.keypressed(key)
@@ -101,6 +133,14 @@ function movePaddle(dt)
   end
 end
 
+function removeHitBlocks()
+  for i,v in ipairs(blocks) do
+    if v.fixture:getUserData() == "Hit" then
+      table.remove(blocks,i)
+    end
+  end
+end
+
 function detectLoss()
   -- detect ball off the bottom of the screen
   if ball.body:getY()>height then
@@ -110,6 +150,14 @@ end
 
 function beginContact(a, b, coll)
        blop:play()
+end
+
+function endContact(a, b, coll)
+  if a:getUserData()=='Block' then
+    a:setUserData("Hit")
+  elseif b:getUserData()=='Block' then
+    b:setUserData("Hit")
+  end
 end
 
 function initializePositions()
